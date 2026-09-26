@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BNR Print Kiosk</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- PDF.js library for rendering real PDF previews & page count -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+
+  <div class="kiosk-container">
+    <header class="kiosk-header">
+      <h1>BNR Print Kiosk</h1>
+      <p class="subtitle">Quick, automated self-service printing</p>
+    </header>
+
+    <!-- File Upload Section -->
+    <div class="card upload-card" id="drop-zone">
+      <input type="file" id="file-input" accept=".pdf,image/png,image/jpeg" hidden>
+      <div class="upload-content" onclick="document.getElementById('file-input').click()">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        <p id="upload-label"><strong>Upload your files</strong> (PDF, JPG, PNG)</p>
+        <span class="file-name" id="file-name-display"></span>
+      </div>
+    </div>
+
+    <!-- Print Preview Section -->
+    <div class="card preview-card">
+      <h3>Print Preview</h3>
+      <div class="preview-area" id="preview-area">
+        <p class="placeholder-text">No document loaded yet. Please upload a file above.</p>
+        <canvas id="pdf-canvas" style="display:none;"></canvas>
+        <img id="image-preview" style="display:none;" alt="Preview">
+      </div>
+      <div class="page-count-badge" id="page-count-badge">Total Pages: 0</div>
+    </div>
+
+    <!-- Print Settings Options -->
+    <div class="settings-grid">
+      <!-- Page Range Selection -->
+      <div class="setting-item">
+        <label for="page-range">Page Range</label>
+        <select id="page-range">
+          <option value="all">All Pages</option>
+          <option value="custom">Custom Range</option>
+        </select>
+        <input type="text" id="custom-range-input" placeholder="e.g. 1-3, 5" style="display:none; margin-top: 6px;">
+      </div>
+
+      <!-- Colour / B&W -->
+      <div class="setting-item">
+        <label for="color-mode">Colour (or) B/W</label>
+        <select id="color-mode">
+          <option value="bw">Black & White (₹4 / page)</option>
+          <option value="color">Colour Print (₹10 / page)</option>
+        </select>
+      </div>
+
+      <!-- Single Side / Duplex -->
+      <div class="setting-item">
+        <label for="duplex-mode">Sides</label>
+        <select id="duplex-mode">
+          <option value="single">Single Side</option>
+          <option value="duplex">Duplex (Both sides)</option>
+        </select>
+      </div>
+
+      <!-- Number of Copies -->
+      <div class="setting-item">
+        <label for="copies-count">No. of Copies</label>
+        <input type="number" id="copies-count" value="1" min="1" max="100">
+      </div>
+
+      <!-- Pages Per Sheet -->
+      <div class="setting-item">
+        <label for="pages-per-sheet">Pages per Sheet</label>
+        <select id="pages-per-sheet">
+          <option value="1">1 Page per Sheet</option>
+          <option value="2">2 Pages per Sheet</option>
+          <option value="4">4 Pages per Sheet</option>
+        </select>
+      </div>
+
+      <!-- Page Orientation -->
+      <div class="setting-item">
+        <label for="page-orientation">Page Orientation</label>
+        <select id="page-orientation">
+          <option value="portrait">Portrait</option>
+          <option value="landscape">Landscape</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Total Amount Box -->
+    <div class="card total-card">
+      <div class="total-info">
+        <span>Calculated Sheets: <strong id="sheet-count">0</strong></span>
+        <h2>Total Amount: <span class="price" id="total-price">₹0.00</span></h2>
+      </div>
+    </div>
+
+    <!-- Pay Button -->
+    <button class="pay-btn" id="pay-btn" disabled>PAY NOW</button>
+  </div>
+
+  <!-- Paytm / Payment Modal Popup -->
+  <div class="modal" id="payment-modal">
+    <div class="modal-card">
+      <h3>Paytm Payment Gateway</h3>
+      <p>Scan to pay via Paytm / UPI</p>
+      <div class="qr-placeholder" id="qr-container">
+        <!-- Live dynamic QR Code generated using Google Chart API -->
+        <img id="upi-qr" src="" alt="UPI QR Code">
+      </div>
+      <div class="payment-amount" id="modal-amount">Amount: ₹0.00</div>
+      <p class="timer">Waiting for confirmation... <span id="countdown">60s</span></p>
+      <button class="confirm-btn" id="simulate-success-btn">Simulate Successful Payment (Auto-Print)</button>
+      <button class="close-btn" id="close-modal-btn">Cancel</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
