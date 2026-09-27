@@ -5,6 +5,7 @@ const PRICING = {
 };
 
 let uploadedFile = null;
+let originalPdfDoc = null;
 let totalPagesInDoc = 0;
 let calculatedTotal = 0;
 let finalPrintUrl = null;
@@ -41,15 +42,10 @@ fileInput.addEventListener('change', async (e) => {
 
   if (file.type === 'application/pdf') {
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    totalPagesInDoc = pdf.numPages;
+    originalPdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    totalPagesInDoc = originalPdfDoc.numPages;
 
-    const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 0.8 });
-    pdfCanvas.width = viewport.width;
-    pdfCanvas.height = viewport.height;
-    const renderContext = { canvasContext: pdfCanvas.getContext('2d'), viewport: viewport };
-    await page.render(renderContext).promise;
+    await renderPreviewPage(1); // Render first page by default
 
     pdfCanvas.style.display = 'block';
     imagePreview.style.display = 'none';
@@ -60,14 +56,29 @@ fileInput.addEventListener('change', async (e) => {
     pdfCanvas.style.display = 'none';
   }
 
-  pageCountBadge.textContent = `Total Pages: ${totalPagesInDoc}`;
   payBtn.disabled = false;
   recalculatePrice();
 });
 
+// Helper to render preview of a specific PDF page
+async function renderPreviewPage(pageNumber) {
+  if (!originalPdfDoc) return;
+  try {
+    const page = await originalPdfDoc.getPage(pageNumber);
+    const viewport = page.getViewport({ scale: 0.8 });
+    pdfCanvas.width = viewport.width;
+    pdfCanvas.height = viewport.height;
+    const renderContext = { canvasContext: pdfCanvas.getContext('2d'), viewport: viewport };
+    await page.render(renderContext).promise;
+  } catch (err) {
+    console.error("Error rendering preview page:", err);
+  }
+}
+
 // Custom range toggle
 pageRangeSelect.addEventListener('change', () => {
-  customRangeInput.style.display = (pageRangeSelect.value === 'custom') ? 'block' : 'none';
+  const isCustom = pageRangeSelect.value === 'custom';
+  customRangeInput.style.display = isCustom ? 'block' : 'none';
   recalculatePrice();
 });
 
@@ -75,6 +86,7 @@ pageRangeSelect.addEventListener('change', () => {
   element.addEventListener('input', recalculatePrice);
 });
 
+// Parse and return array of 0-indexed page positions
 function getActivePagesArray() {
   if (totalPagesInDoc === 0) return [];
   if (pageRangeSelect.value === 'all' || customRangeInput.value.trim() === '') {
@@ -104,10 +116,23 @@ function getActivePagesArray() {
   return [...new Set(pageIndices)].sort((a, b) => a - b);
 }
 
-function recalculatePrice() {
+async function recalculatePrice() {
   if (totalPagesInDoc === 0) return;
 
-  const activePagesCount = getActivePagesArray().length;
+  const activePagesArray = getActivePagesArray();
+  const activePagesCount = activePagesArray.length;
+
+  // Update preview badge to display selected pages info dynamically
+  if (pageRangeSelect.value === 'custom') {
+    pageCountBadge.textContent = `Selected Pages: ${activePagesCount} (of ${totalPagesInDoc} total)`;
+    // If user specified custom pages, preview the first page of their selection if valid
+    if (activePagesArray.length > 0 && originalPdfDoc) {
+      await renderPreviewPage(activePagesArray[0] + 1);
+    }
+  } else {
+    pageCountBadge.textContent = `Total Pages: ${totalPagesInDoc}`;
+  }
+
   const pagesPerSheet = parseInt(pagesPerSheetSelect.value, 10);
   const copies = Math.max(1, parseInt(copiesInput.value, 10) || 1);
   const isDuplex = duplexModeSelect.value === 'duplex';
