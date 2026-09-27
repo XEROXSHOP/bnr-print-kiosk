@@ -44,7 +44,6 @@ fileInput.addEventListener('change', async (e) => {
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     totalPagesInDoc = pdf.numPages;
 
-    // Render first page preview
     const page = await pdf.getPage(1);
     const viewport = page.getViewport({ scale: 0.8 });
     pdfCanvas.width = viewport.width;
@@ -72,21 +71,16 @@ pageRangeSelect.addEventListener('change', () => {
   recalculatePrice();
 });
 
-// Listen to parameter changes
 [colorModeSelect, duplexModeSelect, copiesInput, pagesPerSheetSelect, customRangeInput].forEach(element => {
   element.addEventListener('input', recalculatePrice);
 });
 
-// Calculate Pricing & Active Pages
 function getActivePagesArray() {
   if (totalPagesInDoc === 0) return [];
-  
   if (pageRangeSelect.value === 'all' || customRangeInput.value.trim() === '') {
-    // Return array of all page indices (0-indexed for pdf-lib: 0 to N-1)
     return Array.from({ length: totalPagesInDoc }, (_, i) => i);
   }
 
-  // Parse custom range like "1-3, 5"
   let pageIndices = [];
   const parts = customRangeInput.value.split(',');
   parts.forEach(part => {
@@ -96,7 +90,7 @@ function getActivePagesArray() {
       const end = parseInt(range[1], 10);
       if (start && end && start <= end) {
         for (let i = start; i <= Math.min(end, totalPagesInDoc); i++) {
-          pageIndices.push(i - 1); // 0-indexed
+          pageIndices.push(i - 1);
         }
       }
     } else if (range.length === 1) {
@@ -107,7 +101,6 @@ function getActivePagesArray() {
     }
   });
 
-  // Remove duplicates and sort
   return [...new Set(pageIndices)].sort((a, b) => a - b);
 }
 
@@ -152,11 +145,9 @@ closeModalBtn.addEventListener('click', () => {
 // Payment Success & Automated PDF Slicing & Printing
 simulateSuccessBtn.addEventListener('click', async () => {
   paymentModal.style.display = 'none';
-  alert('Payment Successful! Processing selected pages for print...');
 
   if (uploadedFile && uploadedFile.type === 'application/pdf') {
     try {
-      // Load pdf-lib dynamically to slice the exact pages user selected
       if (!window.PDFLib) {
         await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js");
       }
