@@ -45,7 +45,7 @@ fileInput.addEventListener('change', async (e) => {
     originalPdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     totalPagesInDoc = originalPdfDoc.numPages;
 
-    await renderPreviewPage(1); // Render first page by default
+    await renderPreviewPage(1);
 
     pdfCanvas.style.display = 'block';
     imagePreview.style.display = 'none';
@@ -122,10 +122,8 @@ async function recalculatePrice() {
   const activePagesArray = getActivePagesArray();
   const activePagesCount = activePagesArray.length;
 
-  // Update preview badge to display selected pages info dynamically
   if (pageRangeSelect.value === 'custom') {
     pageCountBadge.textContent = `Selected Pages: ${activePagesCount} (of ${totalPagesInDoc} total)`;
-    // If user specified custom pages, preview the first page of their selection if valid
     if (activePagesArray.length > 0 && originalPdfDoc) {
       await renderPreviewPage(activePagesArray[0] + 1);
     }
@@ -227,4 +225,3 @@ function silentPrintDocument() {
     }, 500);
   };
 }
-<script src="/bnr-print-kiosk/script.js"></script>
