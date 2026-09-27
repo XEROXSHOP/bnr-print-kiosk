@@ -7,6 +7,7 @@ const PRICING = {
 let uploadedFile = null;
 let totalPagesInDoc = 0;
 let calculatedTotal = 0;
+let fileObjectUrl = null;
 
 // Set PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -34,6 +35,7 @@ fileInput.addEventListener('change', async (e) => {
   if (!file) return;
 
   uploadedFile = file;
+  fileObjectUrl = URL.createObjectURL(file);
   fileNameDisplay.textContent = file.name;
   placeholderText.style.display = 'none';
 
@@ -54,7 +56,7 @@ fileInput.addEventListener('change', async (e) => {
     imagePreview.style.display = 'none';
   } else if (file.type.startsWith('image/')) {
     totalPagesInDoc = 1;
-    imagePreview.src = URL.createObjectURL(file);
+    imagePreview.src = fileObjectUrl;
     imagePreview.style.display = 'block';
     pdfCanvas.style.display = 'none';
   }
@@ -81,7 +83,6 @@ function recalculatePrice() {
 
   let activePages = totalPagesInDoc;
   if (pageRangeSelect.value === 'custom' && customRangeInput.value.trim() !== '') {
-    // Parse custom ranges like "1-3, 5"
     const parsed = parsePageRange(customRangeInput.value, totalPagesInDoc);
     if (parsed > 0) activePages = parsed;
   }
@@ -91,7 +92,6 @@ function recalculatePrice() {
   const isDuplex = duplexModeSelect.value === 'duplex';
   const pricePerPage = PRICING[colorModeSelect.value];
 
-  // Number of printed sheets calculation
   let physicalSheets = Math.ceil(activePages / pagesPerSheet);
   if (isDuplex) {
     physicalSheets = Math.ceil(physicalSheets / 2);
@@ -130,12 +130,8 @@ const closeModalBtn = document.getElementById('close-modal-btn');
 
 payBtn.addEventListener('click', () => {
   modalAmount.textContent = `Amount: ₹${calculatedTotal.toFixed(2)}`;
-  
-  // Real UPI link for Paytm / any UPI app
-  // Replace your-upi-id@paytm with your merchant UPI VPA
   const upiUrl = `upi://pay?pa=your-upi-id@paytm&pn=BNR_Print_Kiosk&am=${calculatedTotal}&cu=INR`;
   upiQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiUrl)}`;
-
   paymentModal.style.display = 'flex';
 });
 
@@ -148,11 +144,31 @@ simulateSuccessBtn.addEventListener('click', () => {
   paymentModal.style.display = 'none';
   alert('Payment Successful! Printing document automatically...');
   
-  // Automatically trigger printer workflow
-  triggerPrintWorkflow();
+  // Call the isolated printing function
+  silentPrintDocument();
 });
 
-function triggerPrintWorkflow() {
-  // If running on a dedicated kiosk browser, window.print() prints silently:
-  window.print();
+// Isolated printing function using a hidden iframe
+function silentPrintDocument() {
+  if (!fileObjectUrl) return;
+
+  // Remove any existing print iframe if present
+  const oldIframe = document.getElementById('print-iframe');
+  if (oldIframe) oldIframe.remove();
+
+  // Create a hidden iframe
+  const iframe = document.createElement('iframe');
+  iframe.id = 'print-iframe';
+  iframe.style.display = 'none';
+  iframe.src = fileObjectUrl;
+  
+  document.body.appendChild(iframe);
+
+  // Wait for the file to load inside the iframe, then trigger its print method
+  iframe.onload = () => {
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    }, 500);
+  };
 }
