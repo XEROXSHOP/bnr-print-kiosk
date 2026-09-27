@@ -227,3 +227,5 @@ function silentPrintDocument() {
     }, 500);
   };
 }
+<script src="/bnr-print-kiosk/script.js"></script>
+<script src="/bnr-print-kiosk/script.js"></script>
