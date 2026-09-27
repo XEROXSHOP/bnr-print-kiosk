@@ -228,4 +228,3 @@ function silentPrintDocument() {
   };
 }
 <script src="/bnr-print-kiosk/script.js"></script>
-<script src="/bnr-print-kiosk/script.js"></script>
